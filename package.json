@@ -1,0 +1,68 @@
+{
+  "name": "icrontab",
+  "version": "1.0.0",
+  "description": "icrontab - 定时任务管理器（Electron + Layui 桌面版，逻辑参考 lisijie/webcron）",
+  "main": "main/main.js",
+  "author": "icrontab",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "check": "node scripts/check.js",
+    "preview": "node scripts/preview-server.js",
+    "seed-demo": "node scripts/seed-demo.js",
+    "icon": "python scripts/make-icon.py",
+    "license": "python scripts/make-license-rtf.py",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "layui": "^2.13.9"
+  },
+  "build": {
+    "appId": "com.icrontab.app",
+    "productName": "icrontab",
+    "copyright": "Copyright © 2026 icrontab",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "normal",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "icrontab-${version}-setup.${ext}"
+    },
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "icrontab",
+      "uninstallDisplayName": "icrontab 定时任务管理器",
+      "deleteAppDataOnUninstall": false,
+      "license": "build/license.rtf",
+      "installerLanguages": ["zh_CN"],
+      "language": "2052"
+    }
+  }
+}

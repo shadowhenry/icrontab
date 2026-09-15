@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; script-src 'self' 'unsafe-inline' 'unsafe-eval' file:; style-src 'self' 'unsafe-inline' file:; img-src 'self' data: file:; font-src 'self' file: data:;">
+  <title>icrontab - 定时任务管理器</title>
+  <link rel="stylesheet" href="vendor/layui/css/layui.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin app-layout">
+
+  <div class="layui-header app-header">
+    <div class="app-logo">
+      <span class="app-logo-mark">cron</span>
+      <span class="app-logo-text">icrontab</span>
+      <span class="app-logo-sub">定时任务管理器</span>
+    </div>
+    <div class="app-header-right">
+      <span class="app-chip" id="chip-scheduler"><i class="app-dot"></i>调度器运行中</span>
+      <span class="app-chip app-chip-dir" id="chip-datadir" title="点击打开数据目录">数据目录</span>
+    </div>
+  </div>
+
+  <div class="layui-side app-side">
+    <div class="layui-side-scroll">
+      <ul class="layui-nav layui-nav-tree app-nav" id="app-nav" lay-filter="app-nav">
+        <li class="layui-nav-item layui-this" data-route="tasks"><a href="#/tasks"><i class="layui-icon layui-icon-list"></i>任务列表</a></li>
+        <li class="layui-nav-item" data-route="logs"><a href="#/logs"><i class="layui-icon layui-icon-log"></i>执行日志</a></li>
+        <li class="layui-nav-item" data-route="groups"><a href="#/groups"><i class="layui-icon layui-icon-component"></i>分组管理</a></li>
+        <li class="layui-nav-item" data-route="settings"><a href="#/settings"><i class="layui-icon layui-icon-set"></i>系统设置</a></li>
+        <li class="layui-nav-item" data-route="help"><a href="#/help"><i class="layui-icon layui-icon-help"></i>使用帮助</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body app-body">
+    <div id="view" class="app-view"></div>
+  </div>
+
+  <div class="layui-footer app-footer">
+    icrontab · Electron + Layui · 调度逻辑参考 <span class="app-mono">lisijie/webcron</span>
+  </div>
+</div>
+
+<div id="tg-portal" class="tg-portal"></div>
+
+<script src="vendor/layui/layui.js"></script>
+<script src="../main/cron.js"></script>
+<script src="../main/trigger.js"></script>
+<script src="js/bridge.js"></script>
+<script src="js/trigger-picker.js"></script>
+<script src="js/pages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
