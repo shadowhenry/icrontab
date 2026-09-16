@@ -24,7 +24,7 @@
 | 界面 | Layui 2.x（资源本地化）+ 原生 JS，无前端框架 |
 | 主进程 | Electron（Node.js），负责调度、执行、存储、通知 |
 | 数据存储 | JSON 文件（原子写入：先写临时文件再重命名） |
-| 打包 | electron-builder（NSIS 安装包） |
+| 打包 | electron-builder（Windows NSIS / macOS dmg） |
 
 ```
 icrontab/
@@ -70,27 +70,35 @@ npm run dev        # 启动并打开 DevTools
 ICRONTAB_DATA_DIR=D:/path/to/data npm start
 ```
 
-## 打包 Windows 安装文件
+## 打包
+
+数据文件（JSON）位于用户数据目录，安装 / 卸载均不影响任务数据。
+
+### Windows
 
 ```bash
-npm run dist       # 产物: dist/icrontab-<version>-setup.exe（NSIS 安装向导）
-npm run pack       # 仅输出免安装目录 dist/win-unpacked/
-npm run icon       # 重新生成应用图标 build/icon.ico（纯 Python 实现，无需 Pillow）
-npm run license    # 重新生成安装协议 build/license.rtf（中文以 \uN? 转义，规避 NSIS 代码页问题）
+npm run dist     # 产物: dist/icrontab-<version>-setup.exe（NSIS 安装向导）
+npm run pack     # 仅输出免安装目录 dist/win-unpacked/
 ```
 
-安装向导特性：可选择安装目录、自动创建桌面/开始菜单快捷方式；**卸载不删除用户数据**（任务 JSON 保存在用户数据目录，重装后仍在）。
+安装向导支持自定义安装目录、创建桌面与开始菜单快捷方式。
 
-协议页说明：中文 Windows 的 NSIS 按 ANSI 代码页解析纯文本 `.txt`，UTF-8 中文会乱码，因此协议页使用 `build/license.rtf`（由 `npm run license` 生成，RTF 内中文以 ASCII 的 `\uN?` 转义表示，任何语言环境都正确）。
+### macOS
 
-国内网络注意：electron-builder 需要下载 NSIS / winCodeSign 等工具链，若直连 GitHub 超时，可预先从镜像下载到缓存（`%LOCALAPPDATA%\electron-builder\Cache\<工具名>\<文件名>`）：
+```bash
+npm run dist:mac   # 产物: dist/icrontab-<version>.dmg
+npm run dist:all   # 一次打包双平台（Windows NSIS + macOS dmg）
+```
 
-| 缓存子目录 | 文件 | 镜像地址（npmmirror） |
-| --- | --- | --- |
-| `7zip@1.0.0` | `7zip-win-x64.tar.gz` | `.../electron-builder-binaries/7zip@1.0.0/7zip-win-x64.tar.gz` |
-| `winCodeSign-2.6.0` | `winCodeSign-2.6.0.7z` | `.../electron-builder-binaries/winCodeSign-2.6.0/winCodeSign-2.6.0.7z` |
-| `nsis-3.0.4.1` | `nsis-3.0.4.1.7z` | 同上规则 |
-| `nsis-resources-3.4.1` | `nsis-resources-3.4.1.7z` | 同上规则 |
-| `icons@1.1.0` | `icons-bundle.tar.gz` | 同上规则 |
+macOS 图标使用 `build/icon.png`（运行 `npm run icon` 一并生成）；建议在 macOS 环境或 CI 的 macOS 节点打包 dmg。
 
-（`...` = `https://npmmirror.com/mirrors`，并同时设置环境变量 `ELECTRON_MIRROR` 与 `ELECTRON_BUILDER_BINARIES_MIRROR`）
+### 其它命令
+
+```bash
+npm run icon       # 重新生成应用图标（build/icon.ico 与 build/icon.png，纯 Python，无需 Pillow）
+npm run license    # 重新生成安装协议（build/license.rtf，RTF 内中文以转义规避 NSIS 代码页乱码）
+```
+
+## License
+
+本项目基于 [MIT 协议](LICENSE) 开源。

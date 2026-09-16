@@ -14,7 +14,9 @@
     "icon": "python scripts/make-icon.py",
     "license": "python scripts/make-license-rtf.py",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --win nsis"
+    "dist": "electron-builder --win nsis",
+    "dist:mac": "electron-builder --mac",
+    "dist:all": "electron-builder --win nsis --mac"
   },
   "dependencies": {},
   "devDependencies": {
@@ -46,6 +48,17 @@
       ],
       "icon": "build/icon.ico",
       "artifactName": "icrontab-${version}-setup.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.utilities",
+      "artifactName": "icrontab-${version}.${ext}"
     },
     "electronDownload": {
       "mirror": "https://npmmirror.com/mirrors/electron/"
