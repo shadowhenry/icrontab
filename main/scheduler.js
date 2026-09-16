@@ -1,12 +1,12 @@
 'use strict';
 
 /**
- * scheduler.js —— 任务调度器（对应 webcron 的 app/jobs/cron.go + init.go）
+ * scheduler.js —— 任务调度器
  *
  * 调度策略：为每个启用的任务计算下一次执行时间，用定时器精确触发；
  * 触发后重新计算下一次时间，形成循环。另有 20 秒的巡检定时器，
  * 用于处理系统休眠、时钟跳变导致的定时器漂移。
- * 并发控制：使用信号量限制同时在执行的任务数（对应 webcron 的 jobs.pool）。
+ * 并发控制：使用信号量限制同时在执行的任务数。
  */
 
 const cron = require('./cron');
@@ -275,7 +275,7 @@ class Scheduler {
     }
   }
 
-  /** 立即执行（对应 webcron 的 Run 操作），不改变任务启用状态 */
+  /** 立即执行，不改变任务启用状态 */
   async runNow(taskId, triggerBy = 'manual') {
     const task = this.store.getTask(taskId);
     if (!task) throw new Error('任务不存在');

@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * notifier.js —— 任务执行通知（对应 webcron 的邮件通知逻辑）
+ * notifier.js —— 任务执行通知
  *
- * 通知策略（与 webcron 的 notify 字段一致）：
+ * 通知策略（任务 notify 字段）：
  *   0 = 不通知
  *   1 = 仅当执行失败或超时时通知
  *   2 = 每次执行都通知

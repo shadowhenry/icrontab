@@ -1,7 +1,7 @@
 {
   "name": "icrontab",
   "version": "1.0.0",
-  "description": "icrontab - 定时任务管理器（Electron + Layui 桌面版，逻辑参考 lisijie/webcron）",
+  "description": "icrontab - 定时任务管理器（Electron + Layui 桌面版）",
   "main": "main/main.js",
   "author": "icrontab",
   "license": "MIT",

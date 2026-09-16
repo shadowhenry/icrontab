@@ -81,7 +81,7 @@
       limit,
       curr,
       layout: ['count', 'prev', 'page', 'next', 'limit', 'skip'],
-      limits: [10, 15, 20, 50, 100],
+      limits: [5, 10, 15, 20, 50],
       jump(_obj, first) {
         if (first) return;
         onJump(_obj.curr);

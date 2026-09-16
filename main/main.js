@@ -98,10 +98,10 @@ async function runScreenshot(win) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1320,
-    height: 860,
-    minWidth: 1040,
-    minHeight: 680,
+    width: 1030,
+    height: 700,
+    minWidth: 960,
+    minHeight: 620,
     title: 'icrontab - 定时任务管理器',
     backgroundColor: '#f5f7fa',
     show: false,

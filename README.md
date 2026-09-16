@@ -1,7 +1,6 @@
 # icrontab - 定时任务管理器
 
-基于 **Electron + Layui** 的桌面定时任务管理器。调度与数据模型完整参考 [lisijie/webcron](https://github.com/lisijie/webcron)（Go + beego + MySQL），
-并将其移植为 Electron 主进程 + JSON 文件存储，无需安装数据库。触发时间交互（触发器）参考 Zapier 风格实现。
+基于 **Electron + Layui** 的桌面定时任务管理器，数据以 JSON 文件落盘，无需安装数据库。
 
 ![任务列表](shots/01-tasks.png)
 
@@ -12,13 +11,44 @@
 - 任务的启用 / 暂停 / 立即执行 / 批量操作，显示上次与下次执行时间
 - 记录每次执行的输出、错误、耗时、退出状态；日志按保留条数自动裁剪
 - 超时强杀进程（Windows 使用 `taskkill /T /F`，其它平台杀进程组）
-- 并发控制：可配置同时执行的任务数上限（对应 webcron 的 `jobs.pool`）；任务可设置「只允许一个实例」
+- 并发控制：可配置同时执行的任务数上限；任务可设置「只允许一个实例」
 - 通知：桌面通知 + SMTP 邮件（465 SSL / 587 STARTTLS，零依赖实现）+ Webhook（JSON POST）
-- 通知策略与 webcron 一致：不通知 / 仅失败时通知 / 每次都通知
+- 通知策略：不通知 / 仅失败时通知 / 每次都通知
 - 分组管理、系统设置（命令解释器 / 默认超时 / 日志保留 / 开机自启 / 数据目录切换）
 - 数据全部落盘为 JSON（`tasks.json` / `groups.json` / `logs.json` / `settings.json`），可直接备份迁移
 
-## 快速开始
+## 技术架构
+
+| 层 | 技术 |
+| --- | --- |
+| 界面 | Layui 2.x（资源本地化）+ 原生 JS，无前端框架 |
+| 主进程 | Electron（Node.js），负责调度、执行、存储、通知 |
+| 数据存储 | JSON 文件（原子写入：先写临时文件再重命名） |
+| 打包 | electron-builder（NSIS 安装包） |
+
+```
+icrontab/
+├── main/                 # Electron 主进程
+│   ├── main.js           # 入口：窗口、IPC、组装各模块
+│   ├── preload.js        # contextBridge 安全桥（window.icron）
+│   ├── cron.js           # cron 引擎：解析 / next / prev / 中文描述（零依赖）
+│   ├── trigger.js        # 触发器 <-> cron 双向转换
+│   ├── store.js          # JSON 文件存储层
+│   ├── scheduler.js      # 调度器：定时器精确触发 + 巡检防漂移 + 并发池
+│   ├── runner.js         # 执行器：shell 执行、超时强杀
+│   ├── notifier.js       # 通知策略：桌面 / 邮件 / Webhook
+│   └── mailer.js         # 极简 SMTP 客户端（零依赖）
+├── renderer/             # 界面（Layui 主题，资源已本地化）
+│   ├── index.html
+│   ├── css/app.css
+│   ├── js/bridge.js      # Electron IPC <-> 浏览器 localStorage 模拟
+│   ├── js/trigger-picker.js  # 触发器交互组件
+│   ├── js/pages.js       # 任务列表 / 编辑 / 日志 / 分组 / 设置 / 帮助
+│   └── js/app.js         # 路由与公共工具
+└── scripts/              # 自检 / 预览服务 / 演示数据 / 截图脚本
+```
+
+## 快速开发
 
 ```bash
 npm install        # 安装依赖（electron + layui）
@@ -39,49 +69,6 @@ npm run dev        # 启动并打开 DevTools
 ```bash
 ICRONTAB_DATA_DIR=D:/path/to/data npm start
 ```
-
-## 界面截图
-
-| 触发器概览 | 月历弹层 | 时间弹层 | 每周多选 |
-| --- | --- | --- | --- |
-| ![触发器概览](shots/02-trigger-overview.png) | ![月历](shots/04-calendar.png) | ![时间](shots/05-timepicker.png) | ![每周](shots/06-weekly.png) |
-
-## 项目结构
-
-```
-icrontab/
-├── main/                 # Electron 主进程
-│   ├── main.js           # 入口：窗口、IPC、组装各模块
-│   ├── preload.js        # contextBridge 安全桥（window.icron）
-│   ├── cron.js           # cron 引擎：解析 / next / prev / 中文描述（零依赖）
-│   ├── trigger.js        # 触发器 <-> cron 双向转换
-│   ├── store.js          # JSON 存储（对应 webcron 的 models + install.sql）
-│   ├── scheduler.js      # 调度器（对应 webcron 的 app/jobs/cron.go + init.go）
-│   ├── runner.js         # 执行器：shell 执行、超时强杀（对应 app/jobs/job.go）
-│   ├── notifier.js       # 通知策略：桌面 / 邮件 / Webhook
-│   └── mailer.js         # 极简 SMTP 客户端（零依赖）
-├── renderer/             # 界面（Layui 主题，资源已本地化）
-│   ├── index.html
-│   ├── css/app.css
-│   ├── js/bridge.js      # Electron IPC <-> 浏览器 localStorage 模拟
-│   ├── js/trigger-picker.js  # 触发器交互组件（按截图实现）
-│   ├── js/pages.js       # 任务列表 / 编辑 / 日志 / 分组 / 设置 / 帮助
-│   └── js/app.js         # 路由与公共工具
-├── scripts/              # 自检 / 预览服务 / 演示数据 / 截图脚本
-└── vendor 源码参考        # .reference/webcron（lisijie/webcron 源码）
-```
-
-## 与 webcron 的对应关系
-
-| webcron | icrontab |
-| --- | --- |
-| `app/jobs/cron.go`（调度注册） | `main/scheduler.js` |
-| `app/jobs/job.go`（执行 / 超时 / 通知） | `main/runner.js` + `main/notifier.js` |
-| `app/models/*.go` + `install.sql`（MySQL） | `main/store.js`（JSON 文件） |
-| 邮件通知（`app/mail/mail.go`） | `main/mailer.js` + 桌面通知 + Webhook |
-| `views/`（Bootstrap 2） | `renderer/`（Layui，触发器按截图交互） |
-
-「一次」触发通过内部标记（`#once:日期`）实现：cron 表达式本身不含年域，任务执行完成后自动置为暂停。
 
 ## 打包 Windows 安装文件
 
@@ -107,4 +94,3 @@ npm run license    # 重新生成安装协议 build/license.rtf（中文以 \uN?
 | `icons@1.1.0` | `icons-bundle.tar.gz` | 同上规则 |
 
 （`...` = `https://npmmirror.com/mirrors`，并同时设置环境变量 `ELECTRON_MIRROR` 与 `ELECTRON_BUILDER_BINARIES_MIRROR`）
-

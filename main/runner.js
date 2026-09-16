@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * runner.js —— 任务执行器（对应 webcron 的 app/jobs/job.go）
+ * runner.js —— 任务执行器
  *
  * 职责：
  *   1. 用系统 shell 执行任务指令，捕获 stdout / stderr

@@ -3,7 +3,7 @@
 /**
  * mailer.js —— 极简 SMTP 客户端（零依赖，支持 465 隐式 TLS 与 587 STARTTLS）
  *
- * 对应 webcron 的 app/mail/mail.go：任务执行完成/失败时发送通知邮件。
+ * 任务执行完成/失败时发送通知邮件。
  */
 
 const net = require('net');

@@ -3,7 +3,7 @@
 /**
  * cron.js —— 轻量 cron 表达式引擎（零依赖）
  *
- * 支持的表达式格式（参考 lisijie/webcron 的说明文档）：
+ * 支持的表达式格式：
  *   Seconds Minutes Hours DayofMonth Month [DayofWeek]
  * 即 5 域或 6 域，第二个可选域为「秒」。DayofWeek 可选。
  *

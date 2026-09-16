@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * store.js —— JSON 文件存储层（替代 webcron 的 MySQL）
+ * store.js —— JSON 文件存储层
  *
  * 数据文件：
  *   <dataDir>/tasks.json     任务

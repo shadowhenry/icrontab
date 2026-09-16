@@ -20,6 +20,14 @@
     return '<span class="badge badge-off">未知</span>';
   }
 
+  /** 时间两行显示：年月日一行、时分秒一行 */
+  function timeHtml(t) {
+    if (!t) return '-';
+    const parts = U().formatTime(t).split(' ');
+    if (parts.length !== 2) return U().formatTime(t);
+    return `<div>${parts[0]}</div><div class="cell-time-sub">${parts[1]}</div>`;
+  }
+
   function triggerBadge(triggerBy) {
     if (triggerBy === 'manual') return '<span class="badge badge-info">手动</span>';
     if (triggerBy === 'test') return '<span class="badge badge-off">测试</span>';
@@ -31,7 +39,7 @@
   /* ============================== 任务列表 ============================== */
 
   Pages.tasks = async function (root, ctx) {
-    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 10, groupId: 0, status: '', keyword: '' });
+    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 5, groupId: 0, status: '', keyword: '' });
     const util = U();
 
     const [stats, groups] = await Promise.all([api.stats(), api.listGroups()]);
@@ -43,7 +51,6 @@
         <div class="stat-card"><div class="stat-label">已暂停</div><div class="stat-value" style="color:var(--text-muted)">${stats.taskPaused}</div></div>
         <div class="stat-card"><div class="stat-label">今日执行</div><div class="stat-value">${stats.todayRuns}</div></div>
         <div class="stat-card"><div class="stat-label">今日失败</div><div class="stat-value" style="color:${stats.todayFailed ? 'var(--danger)' : 'var(--text)'}">${stats.todayFailed}</div></div>
-        <div class="stat-card"><div class="stat-label">分组数量</div><div class="stat-value">${stats.groupTotal}</div></div>
       </div>
 
       <div class="card">
@@ -51,35 +58,37 @@
           <button class="btn" id="btn-batch" lay-dropdown="{注}">批量操作 <i class="layui-icon layui-icon-down" style="font-size:12px"></i></button>
           <button class="btn btn-primary" id="btn-new">+ 新建任务</button>
           <div class="spacer"></div>
-          <select class="select" id="f-group" style="width:150px">
+          <select class="select" id="f-group" style="width:128px">
             <option value="0">全部分组</option>
             ${groups.map((g) => `<option value="${g.id}"${Number(state.groupId) === Number(g.id) ? ' selected' : ''}>${util.escapeHtml(g.groupName)}</option>`).join('')}
           </select>
-          <select class="select" id="f-status" style="width:120px">
+          <select class="select" id="f-status" style="width:104px">
             <option value="">全部状态</option>
             <option value="1"${String(state.status) === '1' ? ' selected' : ''}>启用中</option>
             <option value="0"${String(state.status) === '0' ? ' selected' : ''}>已暂停</option>
           </select>
-          <input class="input" id="f-keyword" style="width:220px" placeholder="搜索任务名称 / 指令" value="${util.escapeHtml(state.keyword)}">
+          <input class="input" id="f-keyword" style="width:200px" placeholder="搜索任务名称 / 指令" value="${util.escapeHtml(state.keyword)}">
           <button class="btn" id="btn-search">搜索</button>
         </div>
 
         <div class="table-wrap">
+          <div class="table-scroll">
           <table class="grid">
             <thead>
               <tr>
-                <th style="width:36px"><input type="checkbox" id="chk-all"></th>
-                <th style="width:50px">ID</th>
-                <th style="width:90px">状态</th>
+                <th style="width:32px"><input type="checkbox" id="chk-all"></th>
+                <th style="width:48px">ID</th>
+                <th style="width:64px">状态</th>
                 <th>任务</th>
-                <th style="width:250px">触发方式</th>
-                <th style="width:150px">上次执行</th>
-                <th style="width:150px">下次执行</th>
-                <th style="width:260px">操作</th>
+                <th>触发方式</th>
+                <th style="width:96px">上次执行</th>
+                <th style="width:96px">下次执行</th>
+                <th class="col-op" style="width:190px">操作</th>
               </tr>
             </thead>
             <tbody id="task-body"><tr><td colspan="8" class="empty">加载中…</td></tr></tbody>
           </table>
+          </div>
         </div>
         <div class="pager" id="pager"></div>
       </div>`;
@@ -99,16 +108,14 @@
             <td class="text-muted">${task.id}</td>
             <td>${Number(task.status) === 1 ? '<span class="badge badge-on"><i class="app-dot" style="width:6px;height:6px;box-shadow:none"></i>启用</span>' : '<span class="badge badge-off">暂停</span>'}</td>
             <td>
-              <div class="cell-name">${util2.escapeHtml(task.taskName)}</div>
-              <div class="cell-desc" title="${util2.escapeHtml(task.description || task.command)}">${util2.escapeHtml(task.description || task.command)}</div>
+              <div class="cell-name" title="${util2.escapeHtml(task.taskName)}">${util2.escapeHtml(task.taskName)}</div>
             </td>
             <td>
-              <div>${util2.escapeHtml(task.triggerText)}</div>
-              <span class="cell-cron">${util2.escapeHtml(task.cronClean)}</span>
+              <div class="cell-trigger" title="${util2.escapeHtml(task.triggerText)}">${util2.escapeHtml(task.triggerText)}</div>
             </td>
-            <td class="cell-time">${task.prevTime ? util2.formatTime(task.prevTime) : '-'}</td>
-            <td class="cell-time">${Number(task.status) === 1 && task.nextTime ? util2.formatTime(task.nextTime) : '-'}</td>
-            <td>
+            <td class="cell-time">${task.prevTime ? timeHtml(task.prevTime) : '-'}</td>
+            <td class="cell-time">${Number(task.status) === 1 && task.nextTime ? timeHtml(task.nextTime) : '-'}</td>
+            <td class="col-op">
               <div class="row-actions">
                 ${Number(task.status) === 1
     ? `<button class="btn btn-sm" data-act="pause">暂停</button>`
@@ -136,7 +143,7 @@
         active: async (id) => { await api.toggleTask(id, 1); U().toast('任务已激活'); reload(); },
         pause: async (id) => { await api.toggleTask(id, 0); U().toast('任务已暂停'); reload(); },
         run: async (id) => {
-          U().confirm('该功能建议只用来做任务测试，确定要立即执行该任务吗？', async () => {
+          U().confirm('该任务将立即执行一次，确定执行吗？', async () => {
             U().loading('正在执行…');
             const res = await api.runTask(id);
             U().closeLoading();
@@ -314,7 +321,7 @@
     const runBtn = root.querySelector('#btn-run');
     if (runBtn) {
       runBtn.onclick = () => {
-        U().confirm('确定立即执行一次该任务吗？', async () => {
+        U().confirm('将立即执行一次该任务，用于验证任务是否配置正确。确定执行吗？', async () => {
           U().loading('正在执行…');
           const res = await api.runTask(id);
           U().closeLoading();
@@ -390,21 +397,23 @@
           <button class="btn" id="btn-clear">清空日志</button>
         </div>
         <div class="table-wrap">
+          <div class="table-scroll">
           <table class="grid">
             <thead>
               <tr>
                 <th style="width:60px">ID</th>
                 <th>任务</th>
                 <th style="width:80px">触发</th>
-                <th style="width:160px">开始时间</th>
+                <th>开始时间</th>
                 <th style="width:100px">耗时</th>
                 <th style="width:90px">状态</th>
                 <th style="width:110px">输出大小</th>
-                <th style="width:150px">操作</th>
+                <th class="col-op" style="width:96px">操作</th>
               </tr>
             </thead>
             <tbody id="log-body"><tr><td colspan="8" class="empty">加载中…</td></tr></tbody>
           </table>
+          </div>
         </div>
         <div class="pager" id="pager"></div>
       </div>`;
@@ -422,11 +431,11 @@
             <td class="text-muted">${log.id}</td>
             <td class="cell-name">#${log.taskId} ${util2.escapeHtml(log.taskName)}</td>
             <td>${triggerBadge(log.triggerBy)}</td>
-            <td class="cell-time">${util2.formatTime(log.createTime)}</td>
+            <td class="cell-time">${timeHtml(log.createTime)}</td>
             <td class="cell-time">${(Number(log.processTime) / 1000).toFixed(2)}s</td>
             <td>${statusBadge(log.status)}</td>
             <td class="cell-time">${util2.sizeFormat((log.output || '').length)}</td>
-            <td>
+            <td class="col-op">
               <div class="row-actions">
                 <button class="btn btn-sm" data-act="view" data-id="${log.id}">查看</button>
                 <button class="btn btn-sm btn-danger" data-act="del" data-id="${log.id}">删除</button>
@@ -490,24 +499,25 @@
             <span class="text-muted" style="font-size:12px">共 ${groups.length} 个分组</span>
           </div>
           <div class="table-wrap">
+            <div class="table-scroll">
             <table class="grid">
               <thead>
                 <tr>
-                  <th style="width:60px">ID</th>
-                  <th style="width:220px">分组名称</th>
+                  <th style="width:48px">ID</th>
+                  <th>分组名称</th>
                   <th>说明</th>
-                  <th style="width:120px">任务数</th>
-                  <th style="width:160px">操作</th>
+                  <th style="width:80px">任务数</th>
+                  <th class="col-op" style="width:96px">操作</th>
                 </tr>
               </thead>
               <tbody>
                 ${groups.length ? groups.map((g) => `
                   <tr>
                     <td class="text-muted">${g.id}</td>
-                    <td class="cell-name">${util.escapeHtml(g.groupName)}</td>
-                    <td class="text-muted">${util.escapeHtml(g.description || '-')}</td>
+                    <td class="cell-name" title="${util.escapeHtml(g.groupName)}">${util.escapeHtml(g.groupName)}</td>
+                    <td><div class="cell-desc" style="margin-top:0" title="${util.escapeHtml(g.description || '')}">${util.escapeHtml(g.description || '-')}</div></td>
                     <td>${g.taskCount}</td>
-                    <td>
+                    <td class="col-op">
                       <div class="row-actions">
                         <button class="btn btn-sm" data-act="edit" data-id="${g.id}">编辑</button>
                         <button class="btn btn-sm btn-danger" data-act="del" data-id="${g.id}">删除</button>
@@ -517,6 +527,7 @@
     : '<tr><td colspan="5"><div class="empty"><div class="empty-title">暂无分组</div></div></td></tr>'}
               </tbody>
             </table>
+            </div>
           </div>
         </div>`;
 
@@ -606,7 +617,7 @@
           <div class="field" style="margin-bottom:0">
             <label class="field-label">同时执行的任务数上限</label>
             <input class="input" id="set-pool" type="number" min="1" max="64" value="${settings.poolSize || 8}">
-            <div class="field-hint">对应 webcron 的 jobs.pool，超出上限的任务会排队等待。</div>
+            <div class="field-hint">超出上限的任务会排队等待。</div>
           </div>
           <div class="field" style="margin-bottom:0">
             <label class="field-label">默认超时（秒）</label>
@@ -772,18 +783,6 @@ DayofWeek    0-6    支持 * / , - ? 也可写 SUN-SAT（0 = 周日）
 0 0/30 9-17 * * ?     朝九晚五之间每 30 分钟执行
 0 15 10 ? * MON-FRI   周一至周五 10:15 执行
 0 15 10 15 * ?        每月 15 日 10:15 执行</div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">与 lisijie/webcron 的对应关系</div>
-        <div class="card-sub">本项目在逻辑上完整参考了 webcron，并把后端从 Go + MySQL 换成 Electron 主进程 + JSON 文件</div>
-        <ul class="help-list">
-          <li><b>webcron 的 app/jobs/cron.go</b> → <span class="app-mono">main/scheduler.js</span>：任务注册、注销、下一次执行时间计算、并发池（jobs.pool）</li>
-          <li><b>webcron 的 app/jobs/job.go</b> → <span class="app-mono">main/runner.js</span>：shell 执行、超时强杀、输出记录</li>
-          <li><b>webcron 的 app/models/*.go + install.sql</b> → <span class="app-mono">main/store.js</span>：任务 / 分组 / 日志 / 设置，落盘为 JSON</li>
-          <li><b>webcron 的邮件通知</b> → <span class="app-mono">main/notifier.js + main/mailer.js</span>：桌面通知、SMTP 邮件、Webhook</li>
-          <li><b>webcron 的 views（Bootstrap）</b> → <span class="app-mono">renderer/*</span>：改用 Layui 主题，触发器交互按截图实现</li>
-        </ul>
       </div>`;
   };
 
