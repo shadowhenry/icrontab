@@ -16,7 +16,9 @@
 
 ## 环境注意事项
 - **Electron 截图在默认沙箱下会静默退出（exit 0、无输出、不出图），必须用 `dangerouslyDisableSandbox: true` 运行**；`electron --version` 这类无窗口调用不受影响，别据此误判。
-- 启动 Electron 前必须 `unset ELECTRON_RUN_AS_NODE`（宿主全局设了 1）；已安装的 icrontab.exe 会占单实例锁，先 taskkill。
+- **后台任务（run_in_background）方式启动 electron 会因 GPU 进程崩溃而失败**，Electron 相关验证必须前台运行；隐藏窗口后 `capturePage` 永久阻塞，托盘/隐藏逻辑测试不能用截图流程。
+- 清理 electron/icrontab 进程用 PowerShell `Stop-Process`；bash 里 `taskkill //IM` 在此环境会报「无效参数 / '//IM'」。
+- 启动 Electron 前必须 `unset ELECTRON_RUN_AS_NODE`（宿主全局设了 1）；已安装的 icrontab.exe 会占单实例锁，先 Stop-Process。
 - bash 需先 `export PATH="/c/Program Files/Git/usr/bin:$PATH"`；`./node_modules/.bin/electron` 包装脚本失效，直接调 `node_modules/electron/dist/electron.exe`。
 - 同一文件不要并行发多个 Edit（会互相覆盖），改同一文件要串行。
 

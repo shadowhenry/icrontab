@@ -31,6 +31,19 @@ function formatTime(ts) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+// 耗时格式化：60 秒以内按秒，超过按分钟，超过 60 分钟按小时
+function durationText(ms) {
+  const s = Number(ms) / 1000;
+  if (!isFinite(s) || s < 0) return '-';
+  if (s < 60) return `${s.toFixed(2)} 秒`;
+  const sec = Math.round(s);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const rs = sec % 60;
+  if (h > 0) return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
+  return rs ? `${m} 分 ${rs} 秒` : `${m} 分`;
+}
+
 function buildMail({ task, log }) {
   const status = statusText(log.status);
   const subject = `任务执行结果通知 #${task.id}: ${task.taskName} ${status}`;
@@ -42,7 +55,7 @@ function buildMail({ task, log }) {
     `任务名称：${task.taskName}`,
     `触发方式：${log.triggerBy === 'manual' ? '手动执行' : log.triggerBy === 'test' ? '测试执行' : '定时调度'}`,
     `执行时间：${formatTime(log.createTime)}`,
-    `执行耗时：${(Number(log.processTime) / 1000).toFixed(3)} 秒`,
+    `执行耗时：${durationText(log.processTime)}`,
     `执行状态：${status}`,
     '',
     '-------------以下是任务执行输出-------------',
@@ -59,7 +72,7 @@ function buildMail({ task, log }) {
       任务名称：${escapeHtml(task.taskName)}<br/>
       触发方式：${log.triggerBy === 'manual' ? '手动执行' : '定时调度'}<br/>
       执行时间：${formatTime(log.createTime)}<br/>
-      执行耗时：${(Number(log.processTime) / 1000).toFixed(3)} 秒<br/>
+      执行耗时：${durationText(log.processTime)}<br/>
       执行状态：<b style="color:${Number(log.status) === 0 ? '#1a7f37' : '#c62828'}">${status}</b>
     </p>
     <p>-------------以下是任务执行输出-------------</p>
@@ -146,7 +159,7 @@ class Notifier {
       try {
         this.onDesktop(
           `任务${status}：${task.taskName}`,
-          `#${task.id} ${formatTime(log.createTime)} · 耗时 ${(Number(log.processTime) / 1000).toFixed(2)}s`,
+          `#${task.id} ${formatTime(log.createTime)} · 耗时 ${durationText(log.processTime)}`,
         );
       } catch (err) { /* ignore */ }
     }

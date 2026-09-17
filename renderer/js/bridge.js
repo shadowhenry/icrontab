@@ -281,7 +281,11 @@
       db = db || load();
       const task = db.tasks.find((t) => Number(t.id) === Number(id));
       if (!task) return { ok: false, message: '任务不存在' };
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      // 预览模式：模拟实时输出直播
+      emit('task:output', { taskId: task.id, chunk: `[预览模式] 执行指令：${task.command}\n` });
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      emit('task:output', { taskId: task.id, chunk: '任务执行中…（预览模式模拟输出）\n' });
+      await new Promise((resolve) => setTimeout(resolve, 400));
       const log = {
         id: nextId(db.logs),
         taskId: task.id,

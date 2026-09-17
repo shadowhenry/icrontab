@@ -142,17 +142,10 @@
       U().bindRowActions(body, {
         active: async (id) => { await api.toggleTask(id, 1); U().toast('任务已激活'); reload(); },
         pause: async (id) => { await api.toggleTask(id, 0); U().toast('任务已暂停'); reload(); },
-        run: async (id) => {
-          U().confirm('该任务将立即执行一次，确定执行吗？', async () => {
-            U().loading('正在执行…');
-            const res = await api.runTask(id);
-            U().closeLoading();
-            if (!res || res.ok === false) {
-              U().toast((res && res.message) || '执行失败', true);
-            } else {
-              U().toast('执行完成');
-            }
-            reload();
+        run: (id) => {
+          U().confirm('该任务将立即执行一次，确定执行吗？', () => {
+            const task = result.list.find((t) => Number(t.id) === Number(id));
+            U().runTaskLive(id, task ? task.taskName : '', () => reload());
           });
         },
         edit: (id) => ctx.navigate(`#/task/edit/${id}`),
@@ -321,12 +314,9 @@
     const runBtn = root.querySelector('#btn-run');
     if (runBtn) {
       runBtn.onclick = () => {
-        U().confirm('将立即执行一次该任务，用于验证任务是否配置正确。确定执行吗？', async () => {
-          U().loading('正在执行…');
-          const res = await api.runTask(id);
-          U().closeLoading();
-          if (!res || res.ok === false) U().toast((res && res.message) || '执行失败', true);
-          else U().toast('执行完成，可在执行日志中查看输出');
+        U().confirm('将立即执行一次该任务，用于验证任务是否配置正确。', () => {
+          const name = root.querySelector('#task-name').value.trim();
+          U().runTaskLive(id, name);
         });
       };
     }
@@ -432,7 +422,7 @@
             <td class="cell-name">#${log.taskId} ${util2.escapeHtml(log.taskName)}</td>
             <td>${triggerBadge(log.triggerBy)}</td>
             <td class="cell-time">${timeHtml(log.createTime)}</td>
-            <td class="cell-time">${(Number(log.processTime) / 1000).toFixed(2)}s</td>
+            <td class="cell-time">${util2.durationFormat(log.processTime)}</td>
             <td>${statusBadge(log.status)}</td>
             <td class="cell-time">${util2.sizeFormat((log.output || '').length)}</td>
             <td class="col-op">

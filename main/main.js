@@ -10,7 +10,7 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { app, BrowserWindow, ipcMain, shell, Notification, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification, dialog, Tray, Menu } = require('electron');
 
 const { Store } = require('./store');
 const { Runner } = require('./runner');
@@ -25,6 +25,11 @@ let store = null;
 let runner = null;
 let scheduler = null;
 let notifier = null;
+
+/* 托盘相关状态：点击关闭 = 隐藏到托盘后台运行，托盘「退出」才真正退出 */
+let tray = null;
+let quitting = false;
+let closeTipShown = false;
 
 /* ----------------------------- 基础配置 ----------------------------- */
 
@@ -129,9 +134,72 @@ function createWindow() {
     if (shotOut) runScreenshot(mainWindow);
   });
 
+  // 点击关闭 → 隐藏到托盘，调度器继续在后台运行；真正退出走托盘菜单「退出」
+  mainWindow.on('close', (e) => {
+    if (quitting) return;
+    e.preventDefault();
+    mainWindow.hide();
+    createTray();
+    if (!closeTipShown) {
+      closeTipShown = true;
+      if (Notification.isSupported()) {
+        const n = new Notification({
+          title: 'icrontab 仍在后台运行',
+          body: '定时任务会继续执行，点击托盘图标可重新打开界面。',
+          silent: true,
+        });
+        n.on('click', () => showMainWindow());
+        n.show();
+      }
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+}
+
+/* ----------------------------- 托盘 ----------------------------- */
+
+function trayIcon() {
+  // 打包后 build/icon.png 在 asar 内，Electron 支持直接读取
+  const candidates = [
+    path.join(app.getAppPath(), 'build', 'icon.png'),
+    path.join(__dirname, '..', 'build', 'icon.png'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return undefined; // 无图标时用系统默认
+}
+
+function showMainWindow() {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+function createTray() {
+  if (tray) return;
+  try {
+    const iconFile = trayIcon();
+    tray = new Tray(iconFile || undefined);
+  } catch (err) {
+    tray = null;
+    return;
+  }
+  tray.setToolTip('icrontab - 定时任务管理器（后台运行中）');
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '打开主界面', click: () => showMainWindow() },
+    { type: 'separator' },
+    { label: '退出', click: () => { quitting = true; app.quit(); } },
+  ]));
+  tray.on('click', () => showMainWindow());
+  tray.on('double-click', () => showMainWindow());
 }
 
 function pushEvent(event, payload) {
@@ -296,7 +364,11 @@ function registerIpc() {
 
   ipcMain.handle('tasks:run', async (evt, id) => {
     try {
-      const log = await scheduler.runNow(id, 'manual');
+      const taskId = Number(id);
+      const log = await scheduler.runNow(taskId, 'manual', {
+        // 手动执行时把输出块实时推给渲染层，供「执行中」弹窗直播显示
+        onOutput: (chunk) => pushEvent('task:output', { taskId, chunk }),
+      });
       return { ok: true, log };
     } catch (err) {
       return { ok: false, message: err.message };
@@ -434,10 +506,7 @@ if (!gotLock) {
   app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.focus();
-    }
+    showMainWindow();
   });
 
   app.whenReady().then(() => {
@@ -456,6 +525,11 @@ if (!gotLock) {
   });
 
   app.on('before-quit', () => {
+    quitting = true; // 允许窗口真正关闭（截图模式 / 托盘退出 / 系统关机都走这里）
+    if (tray) {
+      tray.destroy();
+      tray = null;
+    }
     if (scheduler) scheduler.stop();
   });
 }

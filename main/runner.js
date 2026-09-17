@@ -67,11 +67,13 @@ class Runner {
   /**
    * 执行任务
    * @param {object} task 任务对象
-   * @param {{triggerBy?: string}} options triggerBy: schedule | manual | test
+   * @param {{triggerBy?: string, onOutput?: (chunk: string) => void}} options
+   *   triggerBy: schedule | manual | test；onOutput: 实时输出回调（手动执行时用于界面直播）
    * @returns {Promise<object>} 日志记录
    */
   run(task, options = {}) {
     const triggerBy = options.triggerBy || 'schedule';
+    const onOutput = typeof options.onOutput === 'function' ? options.onOutput : null;
     const settings = this.store.getSettings();
     const shell = resolveShell(settings);
     const startedAt = Date.now();
@@ -109,16 +111,22 @@ class Runner {
       const timer = timeoutSec > 0
         ? setTimeout(() => {
           timedOut = true;
-          stderr += `\n----------------------\n任务执行超过 ${timeoutSec} 秒，进程已被强制结束\n`;
+          const note = `\n----------------------\n任务执行超过 ${timeoutSec} 秒，进程已被强制结束\n`;
+          stderr += note;
+          if (onOutput) onOutput(note);
           killTree(child);
         }, timeoutSec * 1000)
         : null;
 
       child.stdout.on('data', (chunk) => {
-        if (stdout.length < MAX_OUTPUT) stdout += chunk.toString('utf8');
+        const text = chunk.toString('utf8');
+        if (stdout.length < MAX_OUTPUT) stdout += text;
+        if (onOutput) onOutput(text);
       });
       child.stderr.on('data', (chunk) => {
-        if (stderr.length < MAX_OUTPUT) stderr += chunk.toString('utf8');
+        const text = chunk.toString('utf8');
+        if (stderr.length < MAX_OUTPUT) stderr += text;
+        if (onOutput) onOutput(text);
       });
 
       /** 统一收尾：只落库一次日志 */

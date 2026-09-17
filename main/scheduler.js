@@ -276,7 +276,7 @@ class Scheduler {
   }
 
   /** 立即执行，不改变任务启用状态 */
-  async runNow(taskId, triggerBy = 'manual') {
+  async runNow(taskId, triggerBy = 'manual', options = {}) {
     const task = this.store.getTask(taskId);
     if (!task) throw new Error('任务不存在');
     const entry = this.entries.get(Number(taskId));
@@ -284,7 +284,7 @@ class Scheduler {
     this.emit('task:started', { taskId: Number(taskId), taskName: task.taskName });
     await this.pool.acquire();
     try {
-      const log = await this.runner.run(task, { triggerBy });
+      const log = await this.runner.run(task, { triggerBy, onOutput: options.onOutput });
       this.emit('task:finished', { taskId: Number(taskId), taskName: task.taskName, log });
       return log;
     } finally {

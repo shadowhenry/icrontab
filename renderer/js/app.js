@@ -57,6 +57,72 @@
     loadingIndex = null;
   }
 
+  /* 手动执行弹窗：方形不透明背景 + 实时日志直播 */
+  function runTaskLive(id, taskName, onComplete) {
+    const index = layer.open({
+      type: 1,
+      title: `正在执行：#${id} ${taskName || ''}`,
+      area: ['480px', '480px'],
+      shade: 0.2,
+      btn: ['关闭'],
+      yes: () => layer.close(index),
+      content: `
+        <div class="run-live">
+          <div class="run-live-head">
+            <span class="badge badge-on" id="run-live-status"><i class="app-dot"></i>执行中</span>
+            <span class="run-live-info">输出会实时显示在这里</span>
+          </div>
+          <pre class="run-live-log" id="run-live-log">（等待输出…）</pre>
+          <div class="run-live-foot" id="run-live-foot"></div>
+        </div>`,
+      end: () => {
+        if (unsub) unsub();
+        unsub = null;
+      },
+    });
+
+    const logEl = document.getElementById('run-live-log');
+    const footEl = document.getElementById('run-live-foot');
+    const statusEl = document.getElementById('run-live-status');
+    const emptyMark = '（等待输出…）';
+
+    const append = (text) => {
+      if (logEl.textContent === emptyMark) logEl.textContent = '';
+      logEl.textContent += text;
+      logEl.scrollTop = logEl.scrollHeight;
+    };
+
+    // 订阅主进程推送的输出块（仅匹配当前任务）
+    let unsub = api.onEvent((message) => {
+      if (!message || message.event !== 'task:output') return;
+      if (Number(message.payload && message.payload.taskId) !== Number(id)) return;
+      append(String((message.payload && message.payload.chunk) || ''));
+    });
+
+    api.runTask(id).then((res) => {
+      if (unsub) { unsub(); unsub = null; }
+      if (!res || res.ok === false) {
+        statusEl.className = 'badge badge-err';
+        statusEl.textContent = '失败';
+        footEl.textContent = (res && res.message) || '执行失败';
+        if (logEl.textContent === emptyMark) logEl.textContent = footEl.textContent;
+        return;
+      }
+      const log = res.log || {};
+      const ok = String(log.status) === '0';
+      const timedOut = String(log.status) === '-2';
+      statusEl.className = `badge ${ok ? 'badge-on' : (timedOut ? 'badge-warn' : 'badge-err')}`;
+      statusEl.innerHTML = ok ? '<i class="app-dot"></i>成功' : (timedOut ? '超时' : '失败');
+      footEl.textContent = `耗时 ${durationFormat(log.processTime)}`;
+      // 全程无输出时，兜底展示最终结果
+      if (logEl.textContent === emptyMark) {
+        logEl.textContent = (log.output || log.error || '（无输出）').trim();
+        logEl.scrollTop = 0;
+      }
+      if (typeof onComplete === 'function') onComplete(res);
+    });
+  }
+
   function confirm(message, onOk) {
     layer.confirm(message, {
       title: '操作确认',
@@ -133,7 +199,7 @@
         <span class="badge ${badgeClass}">${statusText}</span>
         <span>任务：#${log.taskId} ${escapeHtml(log.taskName)}</span>
         <span>开始：${formatTime(log.createTime)}</span>
-        <span>耗时：${(Number(log.processTime) / 1000).toFixed(3)} 秒</span>
+        <span>耗时：${durationFormat(log.processTime)}</span>
         <span>触发：${log.triggerBy === 'manual' ? '手动' : '定时'}</span>
       </div>
       <div class="field-label">执行输出</div>
@@ -150,14 +216,28 @@
     });
   }
 
+  function durationFormat(ms) {
+    const s = Number(ms) / 1000;
+    if (!isFinite(s) || s < 0) return '-';
+    if (s < 60) return `${s.toFixed(2)} 秒`;
+    const sec = Math.round(s);
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const rs = sec % 60;
+    if (h > 0) return m ? `${h} 小时 ${m} 分` : `${h} 小时`;
+    return rs ? `${m} 分 ${rs} 秒` : `${m} 分`;
+  }
+
   window.AppUtil = {
     pad,
     escapeHtml,
     formatTime,
+    durationFormat,
     sizeFormat,
     toast,
     loading,
     closeLoading,
+    runTaskLive,
     confirm,
     renderPager,
     bindRowActions,
