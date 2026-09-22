@@ -6,21 +6,18 @@
 <p align="center">基于 <b>Electron + Layui</b> 的桌面定时任务管理器，数据以 JSON 文件落盘，无需安装数据库。</p>
 
 <p align="center">
-  <img src="build/shots/20-tasks.png" alt="icrontab 任务列表" width="820">
+  <img src="shots/20-tasks.png" alt="icrontab 任务列表" width="820">
 </p>
 
 ## 功能特点
 
-- 六种可视化触发方式：**一次 / 每小时 / 每天 / 每周 / 每月 / 每年**，底层统一转换为 cron 表达式（支持 5 / 6 域、秒级）
-- 触发器交互：`+ 添加触发器` → 触发类型概览 → 一行式触发器（类型下拉 / 月历弹层 / HH:MM + AM/PM 时间弹层）
+- 可视化触发方式：**一次 / 每小时 / 每天 / 每周 / 每月 / 每年**，Zapier风格。x
 - 任务的启用 / 暂停 / 立即执行 / 批量操作，显示上次与下次执行时间
-- 记录每次执行的输出、错误、耗时、退出状态；日志按保留条数自动裁剪
+- 记录每次执行的输出、错误、耗时、退出状态
 - 超时强杀进程（Windows 使用 `taskkill /T /F`，其它平台杀进程组）
 - 并发控制：可配置同时执行的任务数上限；任务可设置「只允许一个实例」
-- 通知：桌面通知 + SMTP 邮件（465 SSL / 587 STARTTLS，零依赖实现）+ Webhook（JSON POST）
-- 通知策略：不通知 / 仅失败时通知 / 每次都通知
-- 分组管理、系统设置（命令解释器 / 默认超时 / 日志保留 / 开机自启 / 数据目录切换）
-- 数据全部落盘为 JSON（`tasks.json` / `groups.json` / `logs.json` / `settings.json`），可直接备份迁移
+- 通知：桌面通知 + SMTP 邮件 + Webhook（JSON POST）
+- 数据全部落盘本地 JSON（`tasks.json` / `groups.json` / `logs.json` / `settings.json`），可直接备份迁移
 
 ## 技术架构
 
