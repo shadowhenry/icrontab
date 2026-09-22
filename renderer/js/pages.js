@@ -39,7 +39,7 @@
   /* ============================== 任务列表 ============================== */
 
   Pages.tasks = async function (root, ctx) {
-    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 5, groupId: 0, status: '', keyword: '' });
+    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 15, groupId: 0, status: '', keyword: '' });
     const util = U();
 
     const [stats, groups] = await Promise.all([api.stats(), api.listGroups()]);
