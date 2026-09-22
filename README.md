@@ -1,8 +1,13 @@
-# icrontab - 定时任务管理器
+<h1 align="center">
+  <img src="build/icon.png" alt="icrontab logo" width="44" height="44" valign="middle">
+  icrontab - 定时任务管理器
+</h1>
 
-基于 **Electron + Layui** 的桌面定时任务管理器，数据以 JSON 文件落盘，无需安装数据库。
+<p align="center">基于 <b>Electron + Layui</b> 的桌面定时任务管理器，数据以 JSON 文件落盘，无需安装数据库。</p>
 
-![任务列表](shots/01-tasks.png)
+<p align="center">
+  <img src="build/shots/20-tasks.png" alt="icrontab 任务列表" width="820">
+</p>
 
 ## 功能特点
 
