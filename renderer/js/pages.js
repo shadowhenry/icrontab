@@ -39,7 +39,7 @@
   /* ============================== 任务列表 ============================== */
 
   Pages.tasks = async function (root, ctx) {
-    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 15, groupId: 0, status: '', keyword: '' });
+    const state = ctx.state.tasks || (ctx.state.tasks = { page: 1, pageSize: 20, groupId: 0, status: '', keyword: '' });
     const util = U();
 
     const [stats, groups] = await Promise.all([api.stats(), api.listGroups()]);
@@ -72,7 +72,7 @@
         </div>
 
         <div class="table-wrap">
-          <div class="table-scroll">
+          <div class="table-scroll table-scroll--fill table-scroll--tasks">
           <table class="grid">
             <thead>
               <tr>
@@ -133,7 +133,8 @@
         count: result.total,
         limit: state.pageSize,
         curr: state.page,
-        onJump: (page) => {
+        onJump: (page, limit) => {
+          state.pageSize = limit || state.pageSize;
           state.page = page;
           reload();
         },
@@ -363,7 +364,7 @@
 
   Pages.logs = async function (root, ctx, params) {
     const util = U();
-    const state = ctx.state.logs || (ctx.state.logs = { page: 1, pageSize: 15, taskId: 0, status: '' });
+    const state = ctx.state.logs || (ctx.state.logs = { page: 1, pageSize: 20, taskId: 0, status: '' });
     if (params && params.taskId) state.taskId = Number(params.taskId);
 
     const tasks = (await api.listTasks({ page: 1, pageSize: 0 })).list;
@@ -387,7 +388,7 @@
           <button class="btn" id="btn-clear">清空日志</button>
         </div>
         <div class="table-wrap">
-          <div class="table-scroll">
+          <div class="table-scroll table-scroll--fill table-scroll--logs">
           <table class="grid">
             <thead>
               <tr>
@@ -438,7 +439,11 @@
         count: result.total,
         limit: state.pageSize,
         curr: state.page,
-        onJump: (page) => { state.page = page; reload(); },
+        onJump: (page, limit) => {
+          state.pageSize = limit || state.pageSize;
+          state.page = page;
+          reload();
+        },
       });
 
       body.querySelectorAll('[data-act="view"]').forEach((btn) => {

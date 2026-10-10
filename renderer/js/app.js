@@ -147,10 +147,10 @@
       limit,
       curr,
       layout: ['count', 'prev', 'page', 'next', 'limit', 'skip'],
-      limits: [5, 10, 15, 20, 50],
+      limits: [10, 20, 30, 50, 100],
       jump(_obj, first) {
         if (first) return;
-        onJump(_obj.curr);
+        onJump(_obj.curr, _obj.limit);
       },
     });
   }

@@ -229,6 +229,17 @@ html, body {
 }
 /* 列宽自适应文字；容器窄时横向滚动兜底 */
 .table-scroll { overflow-x: auto; }
+/* 任务 / 日志列表：整页放不满一屏时铺满剩余空间，超出后表格内部纵向滚动（表头吸顶），
+   分页条始终贴在卡片底部可见。max-height 用 vh 估算「视口高度 - 表格以上占位 - 分页条」。 */
+.table-scroll--fill { overflow: auto; min-height: 220px; }
+.table-scroll--tasks { max-height: calc(100vh - 460px); }
+.table-scroll--logs { max-height: calc(100vh - 431px); }
+.table-scroll--fill table.grid thead th { position: sticky; top: 0; z-index: 3; }
+.table-scroll--fill table.grid thead th.col-op { z-index: 4; }
+.table-scroll--fill::-webkit-scrollbar { width: 9px; height: 9px; }
+.table-scroll--fill::-webkit-scrollbar-track { background: transparent; }
+.table-scroll--fill::-webkit-scrollbar-thumb { background: #d9dde2; border-radius: 9px; }
+.table-scroll--fill::-webkit-scrollbar-thumb:hover { background: #c3c8cf; }
 table.grid { width: 100%; border-collapse: separate; border-spacing: 0; }
 table.grid th {
   text-align: left;
