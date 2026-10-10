@@ -92,7 +92,7 @@ npm run dist:mac   # 产物: dist/icrontab-<version>.dmg
 npm run dist:all   # 一次打包双平台（Windows NSIS + macOS dmg）
 ```
 
-macOS 图标使用 `build/icon.png`（运行 `npm run icon` 一并生成）；建议在 macOS 环境或 CI 的 macOS 节点打包 dmg。
+macOS 图标使用 `build/icon.png`（运行 `npm run icon` 一并生成，输出 1024x1024 —— electron-builder 要求至少 512x512）；建议在 macOS 环境或 CI 的 macOS 节点打包 dmg。
 
 ### 其它命令
 

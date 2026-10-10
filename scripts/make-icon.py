@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-make-icon.py —— 用纯标准库生成应用图标 build/icon.ico
+make-icon.py —— 用纯标准库生成应用图标 build/icon.ico + build/icon.png
 
 图形：Layui 主绿圆角方块 + 白色时钟（指针指向 10 点 10 分）
 不依赖 Pillow / cairo，直接手写 PNG + ICO 容器。
+
+注意：macOS 打包（electron-builder）要求 PNG 图标至少 512x512，
+      因此 icon.png 输出 1024x1024；ICO 内部最大 256（Windows 上限）。
 """
 
 import math
@@ -129,7 +132,7 @@ def render(size, ss=3):
     return rows
 
 
-def png_encode(size, rows):
+def png_encode(size, rows, level=9):
     raw = b''.join(b'\x00' + r for r in rows)
 
     def chunk(tag, data):
@@ -139,8 +142,12 @@ def png_encode(size, rows):
     ihdr = struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0)
     return (b'\x89PNG\r\n\x1a\n'
             + chunk(b'IHDR', ihdr)
-            + chunk(b'IDAT', zlib.compress(raw, 9))
+            + chunk(b'IDAT', zlib.compress(raw, level))
             + chunk(b'IEND', b''))
+
+
+ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
+PNG_SIZE = 1024          # macOS 图标下限 512，这里直接给 1024 更清晰
 
 
 def main():
@@ -148,9 +155,8 @@ def main():
     out_dir = os.path.join(root, 'build')
     os.makedirs(out_dir, exist_ok=True)
 
-    sizes = [16, 24, 32, 48, 64, 128, 256]
     images = []
-    for size in sizes:
+    for size in ICO_SIZES:
         ss = 4 if size <= 64 else 3
         images.append((size, png_encode(size, render(size, ss))))
         print(f'  渲染 {size}x{size} ...')
@@ -170,13 +176,14 @@ def main():
     with open(ico_path, 'wb') as fh:
         fh.write(header + entries + payload)
 
-    # 顺带输出一张 256 PNG 供预览
+    # macOS / Linux / 预览用的大图 PNG（必须 >= 512）
+    print(f'  渲染 {PNG_SIZE}x{PNG_SIZE} ...')
     png_path = os.path.join(out_dir, 'icon.png')
     with open(png_path, 'wb') as fh:
-        fh.write(images[-1][1])
+        fh.write(png_encode(PNG_SIZE, render(PNG_SIZE, 2), level=6))
 
     print(f'已生成: {ico_path} ({os.path.getsize(ico_path)} bytes)')
-    print(f'已生成: {png_path}')
+    print(f'已生成: {png_path} ({os.path.getsize(png_path)} bytes, {PNG_SIZE}x{PNG_SIZE})')
 
 
 if __name__ == '__main__':
